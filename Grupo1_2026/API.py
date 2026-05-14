@@ -36,3 +36,16 @@ df = pd.DataFrame({
 })
 
 print(df.head())
+
+####The day ahead prices are getting gathered
+
+###NEGATIVE PRICE for spain
+
+neg_prices_sp = df[df['Spain'] < 0]
+
+print(neg_prices_sp)
+#No negative price from this period
+amplitude = df['Spain'].max() - df['Spain'].min()
+
+##SPREAD GEOGRAPHIQUE / TRADING ????
+

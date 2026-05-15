@@ -17,11 +17,12 @@ print(spain_df.head())
 france_df = pd.read_csv(
     "data/raw/France_demand_year_2024.csv",
     sep="\t",
-    encoding="latin1"
+    encoding="utf-8"
 )
 
 print("France data loaded")
 print(france_df.head())
+print(france_df.columns)
 
 
 #Loading Germany data
@@ -34,3 +35,81 @@ germany_df = pd.read_csv(
 
 print("Germany data loaded")
 print(germany_df.head())
+
+#cleaning Spain data
+
+#use first row as column names
+spain_df.columns = spain_df.iloc[0]
+
+#remove duplicated header row
+spain_df = spain_df[1:]
+
+#rename important columns
+spain_df = spain_df.rename(columns={
+    "value": "demand_mwh",
+    "datetime": "datetime"
+})
+
+#clean numeric format
+spain_df["demand_mwh"] = (
+    spain_df["demand_mwh"]
+    .str.replace(".", "", regex=False)
+    .str.replace(",", ".", regex=False)
+    .astype(float)
+)
+
+#convert datetime
+spain_df["datetime"] = pd.to_datetime(
+    spain_df["datetime"],
+    utc=True
+)
+
+print("\nSpain cleaned")
+print(spain_df.head())
+
+#clean France data
+
+# reset index
+france_df = france_df.reset_index()
+
+# rename shifted columns correctly
+france_df = france_df.rename(columns={
+    "index": "country",
+    "Nature": "date",
+    "Date": "time",
+    "Heures": "demand_mwh"
+})
+
+# create datetime column
+france_df["datetime"] = pd.to_datetime(
+    france_df["date"].astype(str)
+    + " "
+    + france_df["time"].astype(str)
+)
+
+# remove rows with missing demand
+france_df = france_df.dropna(subset=["demand_mwh"])
+
+print("\nFrance cleaned")
+print(france_df[["datetime", "demand_mwh"]].head())
+
+#clean Germany data
+
+#rename columns
+germany_df = germany_df.rename(columns={
+    "ï»¿Start date": "datetime",
+    "grid load [MWh] Calculated resolutions": "demand_mwh"
+})
+
+#convert datetime
+germany_df["datetime"] = pd.to_datetime(germany_df["datetime"])
+
+#clean numeric values
+germany_df["demand_mwh"] = (
+    germany_df["demand_mwh"]
+    .str.replace(",", "", regex=False)
+    .astype(float)
+)
+
+print("\nGermany cleaned")
+print(germany_df[["datetime", "demand_mwh"]].head())

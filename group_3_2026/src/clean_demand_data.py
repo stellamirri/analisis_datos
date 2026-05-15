@@ -22,7 +22,6 @@ france_df = pd.read_csv(
 
 print("France data loaded")
 print(france_df.head())
-print(france_df.columns)
 
 
 #Loading Germany data
@@ -63,16 +62,18 @@ spain_df["datetime"] = pd.to_datetime(
     spain_df["datetime"],
     utc=True
 )
+#remove timezone information
+spain_df["datetime"] = spain_df["datetime"].dt.tz_localize(None)
 
 print("\nSpain cleaned")
 print(spain_df.head())
 
 #clean France data
 
-# reset index
+#reset index
 france_df = france_df.reset_index()
 
-# rename shifted columns correctly
+#rename shifted columns correctly
 france_df = france_df.rename(columns={
     "index": "country",
     "Nature": "date",
@@ -80,14 +81,14 @@ france_df = france_df.rename(columns={
     "Heures": "demand_mwh"
 })
 
-# create datetime column
+#create datetime column
 france_df["datetime"] = pd.to_datetime(
     france_df["date"].astype(str)
     + " "
     + france_df["time"].astype(str)
 )
 
-# remove rows with missing demand
+#remove rows with missing demand
 france_df = france_df.dropna(subset=["demand_mwh"])
 
 print("\nFrance cleaned")
@@ -113,3 +114,28 @@ germany_df["demand_mwh"] = (
 
 print("\nGermany cleaned")
 print(germany_df[["datetime", "demand_mwh"]].head())
+
+#Standarizing datasets
+
+#Keep only needed columns
+spain_final = spain_df[["datetime", "demand_mwh"]].copy()
+france_final = france_df[["datetime", "demand_mwh"]].copy()
+germany_final = germany_df[["datetime", "demand_mwh"]].copy()
+
+#Add country column
+spain_final["country"] = "Spain"
+france_final["country"] = "France"
+germany_final["country"] = "Germany"
+
+#Combine datasets
+combined_df = pd.concat(
+    [spain_final, france_final, germany_final],
+    ignore_index=True
+)
+
+
+print("\nCombined dataset")
+print(combined_df.head())
+
+print("\nDataset info")
+print(combined_df.info())

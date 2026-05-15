@@ -139,3 +139,27 @@ print(combined_df.head())
 
 print("\nDataset info")
 print(combined_df.info())
+
+#Export processed data
+
+spain_final.to_csv(
+    "data/processed/spain_cleaned.csv",
+    index=False
+)
+
+france_final.to_csv(
+    "data/processed/france_cleaned.csv",
+    index=False
+)
+
+germany_final.to_csv(
+    "data/processed/germany_cleaned.csv",
+    index=False
+)
+
+combined_df.to_csv(
+    "data/processed/combined_demand_data.csv",
+    index=False
+)
+
+print("\nProcessed datasets exported successfully")

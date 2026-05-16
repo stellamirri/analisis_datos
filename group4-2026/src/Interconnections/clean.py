@@ -57,3 +57,36 @@ def cargar_csv(nombre_archivo):
     except Exception as error:
         print(f"  ✗ Error leyendo {nombre_archivo}: {error}")
         return None
+
+
+def detectar_huecos(df, nombre):
+    """
+    Comprueba si faltan horas en los datos.
+    Los datos de ENTSO-E deberían tener un valor por cada hora.
+
+    Parámetros:
+        df    : el DataFrame a comprobar
+        nombre: nombre descriptivo para mostrar en pantalla
+    """
+
+    nulos = df.isnull().sum().sum()
+
+    if nulos > 0:
+        print(f"  ⚠ {nombre}: {nulos} valores nulos encontrados")
+    else:
+        print(f"  ✓ {nombre}: sin valores nulos")
+
+    indice_completo = pd.date_range(
+        start=df.index.min(),
+        end=df.index.max(),
+        freq="h",
+        tz="UTC"
+    )
+
+    horas_que_faltan = indice_completo.difference(df.index)
+
+    if len(horas_que_faltan) > 0:
+        print(f"  ⚠ {nombre}: faltan {len(horas_que_faltan)} horas en el índice")
+    else:
+        print(f"  ✓ {nombre}: índice de fechas completo")
+

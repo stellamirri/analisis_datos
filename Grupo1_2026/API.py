@@ -57,9 +57,7 @@ amplitude = df['Spain'].max() - df['Spain'].min()
 
 ##SPREAD GEOGRAPHIQUE / TRADING ????
 
-# =========================
-# SOLAR GENERATION
-# =========================
+# solar gen
 
 generation = client.query_generation(
     country_code='ES',
@@ -75,7 +73,7 @@ solar = solar.to_frame(name='solar_mw')
 
 df = prices.join(solar, how='inner')
 
-# Remove NaN
+# Remove Not a number values
 df = df.dropna()
 
 # =========================
@@ -89,33 +87,22 @@ capture_price = (
 
 print(f"Solar Capture Price Spain: {capture_price:.2f} €/MWh")
 
-# =========================
-# BASELOAD PRICE
-# =========================
+
 
 baseload_price = df['price'].mean()
 
 print(f"Baseload Price: {baseload_price:.2f} €/MWh")
 
-# =========================
-# CAPTURE RATE
-# =========================
+
 
 capture_rate = capture_price / baseload_price
 
 print(f"Capture Rate: {capture_rate:.2%}")
 
-# =========================
-# NEGATIVE PRICE HOURS
-# =========================
 
 negative_hours = (df['price'] < 0).sum()
 
 print(f"Negative price hours: {negative_hours}")
-
-# =========================
-# SOLAR PRODUCTION DURING NEGATIVE PRICES
-# =========================
 
 solar_negative = df[df['price'] < 0]['solar_mw'].sum()
 
@@ -125,5 +112,15 @@ share_negative = solar_negative / solar_total
 
 print(f"Solar generation during negative prices: {share_negative:.2%}")
 
+
+
+midday = df.between_time('11:00', '15:00')
+
+midday_avg = midday['price'].mean()
+#midday solar deperssion is an environemental and energy grid pehnomenon where peak daytime
+#drivex extreme power generation. Massive surge when sun sets 
+#this is the moment user demand is increasing
+print("Solar depression midday average")
+print( midday_avg)
 
 

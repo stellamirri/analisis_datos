@@ -90,3 +90,30 @@ def detectar_huecos(df, nombre):
     else:
         print(f"  ✓ {nombre}: índice de fechas completo")
 
+def rellenar_huecos(df):
+    """
+    Rellena los valores nulos con interpolación lineal.
+
+    Interpolación lineal significa: si falta el valor de las 14:00
+    y tenemos 100 a las 13:00 y 200 a las 15:00, ponemos 150 a las 14:00.
+    Es una estimación sencilla y razonable para datos de energía.
+
+    Parámetros:
+        df: el DataFrame con posibles huecos
+
+    Retorna:
+        El DataFrame sin huecos
+    """
+
+    indice_completo = pd.date_range(
+        start=df.index.min(),
+        end=df.index.max(),
+        freq="h",
+        tz="UTC"
+    )
+
+    df = df.reindex(indice_completo)
+
+    df = df.interpolate(method="linear", limit=3)
+
+    return df

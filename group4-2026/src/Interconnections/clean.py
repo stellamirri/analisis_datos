@@ -120,3 +120,32 @@ def rellenar_huecos(df):
     df = df.interpolate(method="linear", limit=3)
 
     return df
+
+
+def limpiar_flujos():
+    """
+    Loads, cleans and combines all physical flow files.
+    TODO: implement by Margot
+    """
+    pass
+
+def limpiar_capacidades():
+    """
+    Loads and cleans the interconnection capacity (NTC) files.
+    TODO: implement by Margot
+    """
+    pass
+
+def limpiar_precios():
+    """
+    Loads and cleans the day-ahead price files for each country.
+    TODO: implement by Margot
+    """
+    pass
+
+def limpiar_todo():
+    """
+    Runs the complete cleaning of all data.
+    TODO: implement by Margot
+    """
+    pass

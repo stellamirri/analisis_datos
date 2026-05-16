@@ -124,3 +124,29 @@ print("Solar depression midday average")
 print( midday_avg)
 
 
+##Duck curve, the famous curve of demand and therefore, the lack of flexibility.
+
+hourly_profile = df.groupby(df.index.hour)['price'].mean()
+
+print(hourly_profile)
+
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(10,5))
+
+plt.plot(
+    hourly_profile.index,
+    hourly_profile.values,
+    marker='o'
+)
+
+plt.xlabel('Hour of Day')
+plt.ylabel('Average Price (€/MWh)')
+plt.title('Average Hourly Power Price Profile - Spain')
+
+plt.grid(True)
+
+plt.xticks(range(0,24))
+
+plt.show()
+

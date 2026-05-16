@@ -25,6 +25,9 @@ os.makedirs(CARPETA_PROCESSED, exist_ok=True)
 # -------------------------------------------------------------
 # FUNCIONES DE AYUDA
 # -------------------------------------------------------------
+# limit=3 significa que solo rellenamos hasta 3 horas seguidas de huecos
+# Si hay más de 3 horas seguidas sin datos, las dejamos como NaN
+# para no inventar datos en periodos largos sin información
 
 def cargar_csv(nombre_archivo):
     """

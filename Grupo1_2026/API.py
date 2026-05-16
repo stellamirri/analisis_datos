@@ -200,3 +200,14 @@ plt.show()
 #the evening ramp si the difference between prices at 14 and 20, the goal is to actually have a simple visualisation
 #to analyse how prices tend to go up during the evening.
 
+#Potential bonus, we need to maybe analyse it furthermore is the Battery arbitrage opportunity. The goal of an arbitrage 
+#is to make a profit without taking any risks
+
+battery_mwh = 1
+
+daily_revenue = (
+    ramp_df['evening_ramp']
+    * battery_mwh
+)
+
+print(daily_revenue.head())

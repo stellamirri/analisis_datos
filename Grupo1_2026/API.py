@@ -150,3 +150,53 @@ plt.xticks(range(0,24))
 
 plt.show()
 
+###evening ramp from the duck curve 
+
+price_14h = df[df.index.hour == 14]['price']
+price_20h = df[df.index.hour == 20]['price']
+
+ramp_df = pd.DataFrame({
+    'price_14h': price_14h.values,
+    'price_20h': price_20h.values
+}, index=price_14h.index.date)
+
+
+ramp_df['evening_ramp'] = (
+    ramp_df['price_20h']
+    - ramp_df['price_14h']
+)
+
+
+
+avg_ramp = ramp_df['evening_ramp'].mean()
+
+print(f"\nAverage Evening Ramp: {avg_ramp:.2f} €/MWh")
+
+max_ramp = ramp_df['evening_ramp'].max()
+
+print(f"Maximum Evening Ramp: {max_ramp:.2f} €/MWh")
+
+
+plt.figure(figsize=(12,5))
+
+plt.plot(
+    ramp_df.index,
+    ramp_df['evening_ramp']
+)
+
+plt.axhline(
+    avg_ramp,
+    linestyle='--'
+)
+
+plt.title('Daily Evening Ramp - Spain')
+plt.ylabel('Ramp (€/MWh)')
+plt.xlabel('Date')
+
+plt.grid(True)
+
+plt.show()
+
+#the evening ramp si the difference between prices at 14 and 20, the goal is to actually have a simple visualisation
+#to analyse how prices tend to go up during the evening.
+

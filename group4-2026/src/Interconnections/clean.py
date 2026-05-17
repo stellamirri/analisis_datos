@@ -124,10 +124,61 @@ def rellenar_huecos(df):
 
 def limpiar_flujos():
     """
-    Loads, cleans and combines all physical flow files.
-    TODO: implement by Margot
+    Carga, limpia y combina todos los archivos de flujos físicos.
+
+    Los flujos entre dos países vienen en dos archivos : uno de ida y uno de vuelta.
+    Este programa les combina en un solo DataFrame y calcula el flujo neto.
+
+    Ejemplo:
+    Flujo neto ES→FR = flujo ES→FR - flujo FR→ES
+    Si es positivo: España exporta a Francia
+    Si es negativo: España importa de Francia
+
+    Retorna:
+        Un DataFrame con todos los flujos limpios y el flujo neto
     """
-    pass
+
+    print("\nLimpiando flujos físicos...")
+
+    # Carga los 4 archivos de datos
+    flujo_es_fr = cargar_csv("flujos_ES_FR.csv")
+    flujo_fr_es = cargar_csv("flujos_FR_ES.csv")
+    flujo_fr_de = cargar_csv("flujos_FR_DE.csv")
+    flujo_de_fr = cargar_csv("flujos_DE_FR.csv")
+
+    # Comproba que se cargaron bien
+    archivos = {
+        "ES→FR": flujo_es_fr,
+        "FR→ES": flujo_fr_es,
+        "FR→DE": flujo_fr_de,
+        "DE→FR": flujo_de_fr
+    }
+
+    for nombre, df in archivos.items():
+        if df is not None:
+            detectar_huecos(df, nombre)
+    
+    # Rellena huecos en cada archivo
+    flujo_es_fr = rellenar_huecos(flujo_es_fr) if flujo_es_fr is not None else None
+    flujo_fr_es = rellenar_huecos(flujo_fr_es) if flujo_fr_es is not None else None
+    flujo_fr_de = rellenar_huecos(flujo_fr_de) if flujo_fr_de is not None else None
+    flujo_de_fr = rellenar_huecos(flujo_de_fr) if flujo_de_fr is not None else None
+
+    # Combina todo en un solo DataFrame : cada columna es un flujo diferente
+    df_flujos = pd.DataFrame({
+        "flujo_ES_FR_MWh": flujo_es_fr.iloc[:, 0] if flujo_es_fr is not None else None,
+        "flujo_FR_ES_MWh": flujo_fr_es.iloc[:, 0] if flujo_fr_es is not None else None,
+        "flujo_FR_DE_MWh": flujo_fr_de.iloc[:, 0] if flujo_fr_de is not None else None,
+        "flujo_DE_FR_MWh": flujo_de_fr.iloc[:, 0] if flujo_de_fr is not None else None,
+    })
+
+    # Calcula flujos netos (exportación neta de cada país hacia el vecino) : àositivo = exporta, Negativo = importa
+    df_flujos["neto_ES_FR_MWh"] = df_flujos["flujo_ES_FR_MWh"] - df_flujos["flujo_FR_ES_MWh"]
+    df_flujos["neto_FR_DE_MWh"] = df_flujos["flujo_FR_DE_MWh"] - df_flujos["flujo_DE_FR_MWh"]
+
+    print(f"  ✓ Flujos combinados: {len(df_flujos)} filas, {len(df_flujos.columns)} columnas")
+    return df_flujos
+
 
 def limpiar_capacidades():
     """

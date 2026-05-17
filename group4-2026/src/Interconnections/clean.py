@@ -263,9 +263,40 @@ def limpiar_precios():
     print(f"  ✓ Precios combinados: {len(df_precios)} filas, {len(df_precios.columns)} columnas")
     return df_precios
 
+# -------------------------------------------------------------
+# FUNCIÓN PRINCIPAL
+# -------------------------------------------------------------
+
 def limpiar_todo():
     """
-    Runs the complete cleaning of all data.
-    TODO: implement by Margot
+    Ejecuta la limpieza completa de todos los datos.
+    Al final guarda un único archivo CSV listo para analizar.
     """
-    pass
+
+    print("=" * 50)
+    print("INICIANDO LIMPIEZA DE DATOS")
+    print("=" * 50)
+
+    # Limpia cada tipo de dato por separado
+    df_flujos = limpiar_flujos()
+    df_ntc = limpiar_capacidades()
+    df_precios = limpiar_precios()
+
+    # Combina los tres DataFrames en uno solo. Los une por el índice (la fecha), común a todos
+    print("\nCombinando todos los datos...")
+    df_final = pd.concat([df_flujos, df_ntc, df_precios], axis=1)
+
+    # Elimina filas donde todos los valores son nulos
+    df_final = df_final.dropna(how="all")
+
+    # Guarda el resultado en data/processed/
+    ruta_salida = os.path.join(CARPETA_PROCESSED, "datos_limpios.csv")
+    df_final.to_csv(ruta_salida)
+
+    print(f"\n{'=' * 50}")
+    print("LIMPIEZA COMPLETADA")
+    print(f"Periodo        : {df_final.index.min()} → {df_final.index.max()}")
+    print(f"Archivo guardado en: {ruta_salida}")
+    print("=" * 50)
+
+    return df_final

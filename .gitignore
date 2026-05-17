@@ -13,3 +13,4 @@ data/processed/
 # Archivos temporales de Python
 __pycache__/
 .DS_Store
+.ipynb_checkpoints/

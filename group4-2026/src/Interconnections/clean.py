@@ -182,10 +182,48 @@ def limpiar_flujos():
 
 def limpiar_capacidades():
     """
-    Loads and cleans the interconnection capacity (NTC) files.
-    TODO: implement by Margot
+    Carga y limpia los archivos de capacidad de interconexión (NTC).
+
+    Retorna:
+        Un DataFrame con las capacidades limpias
     """
-    pass
+
+    print("\nLimpiando capacidades NTC...")
+
+    # Carga los archivos de capacidad de interconexión
+    ntc_es_fr = cargar_csv("ntc_ES_FR.csv")
+    ntc_fr_es = cargar_csv("ntc_FR_ES.csv")
+    ntc_fr_de = cargar_csv("ntc_FR_DE.csv")
+    ntc_de_fr = cargar_csv("ntc_DE_FR.csv")
+
+    archivos = {
+        "NTC ES→FR": ntc_es_fr,
+        "NTC FR→ES": ntc_fr_es,
+        "NTC FR→DE": ntc_fr_de,
+        "NTC DE→FR": ntc_de_fr
+    }
+
+    # Comproba que se cargaron bien
+    for nombre, df in archivos.items():
+        if df is not None:
+            detectar_huecos(df, nombre)
+
+    # Rellena los huecos
+    ntc_es_fr = rellenar_huecos(ntc_es_fr) if ntc_es_fr is not None else None
+    ntc_fr_es = rellenar_huecos(ntc_fr_es) if ntc_fr_es is not None else None
+    ntc_fr_de = rellenar_huecos(ntc_fr_de) if ntc_fr_de is not None else None
+    ntc_de_fr = rellenar_huecos(ntc_de_fr) if ntc_de_fr is not None else None
+
+    # Combina todo en un solo DataFrame
+    df_ntc = pd.DataFrame({
+        "ntc_ES_FR_MW": ntc_es_fr.iloc[:, 0] if ntc_es_fr is not None else None,
+        "ntc_FR_ES_MW": ntc_fr_es.iloc[:, 0] if ntc_fr_es is not None else None,
+        "ntc_FR_DE_MW": ntc_fr_de.iloc[:, 0] if ntc_fr_de is not None else None,
+        "ntc_DE_FR_MW": ntc_de_fr.iloc[:, 0] if ntc_de_fr is not None else None,
+    })
+
+    print(f"  ✓ Capacidades combinadas: {len(df_ntc)} filas, {len(df_ntc.columns)} columnas")
+    return df_ntc
 
 def limpiar_precios():
     """

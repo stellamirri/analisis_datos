@@ -227,10 +227,41 @@ def limpiar_capacidades():
 
 def limpiar_precios():
     """
-    Loads and cleans the day-ahead price files for each country.
-    TODO: implement by Margot
-    """
-    pass
+     Carga y limpia los archivos de precios day-ahead de cada país.
+     Retorna:
+         Un DataFrame con los precios limpios de los tres países
+     """
+    print("\nLimpiando precios day-ahead...")
+
+    # Carga los datos de precio per día en cada país
+    precios_es = cargar_csv("precios_ES.csv")
+    precios_fr = cargar_csv("precios_FR.csv")
+    precios_de = cargar_csv("precios_DE.csv")
+
+    archivos = {
+        "Precios ES": precios_es,
+        "Precios FR": precios_fr,
+        "Precios DE": precios_de
+    }
+
+    for nombre, df in archivos.items():
+        if df is not None:
+            detectar_huecos(df, nombre)
+    
+    # Rellena los huecos previamente detectados
+    precios_es = rellenar_huecos(precios_es) if precios_es is not None else None
+    precios_fr = rellenar_huecos(precios_fr) if precios_fr is not None else None
+    precios_de = rellenar_huecos(precios_de) if precios_de is not None else None
+
+    # Combina todos los datos de precio limpiados en un unico DataFrame
+    df_precios = pd.DataFrame({
+        "precio_ES_EUR_MWh": precios_es.iloc[:, 0] if precios_es is not None else None,
+        "precio_FR_EUR_MWh": precios_fr.iloc[:, 0] if precios_fr is not None else None,
+        "precio_DE_EUR_MWh": precios_de.iloc[:, 0] if precios_de is not None else None,
+    })
+
+    print(f"  ✓ Precios combinados: {len(df_precios)} filas, {len(df_precios.columns)} columnas")
+    return df_precios
 
 def limpiar_todo():
     """

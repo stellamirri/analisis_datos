@@ -4,3 +4,8 @@ import pandas as pd
 df_fr = pd.read_csv("data\\processed\\france_cleaned.csv")
 df_de = pd.read_csv("data\\processed\\germany_cleaned.csv")
 df_es = pd.read_csv("data\\processed\\spain_cleaned.csv")
+
+
+# converting the datetime column to datetime format
+for df in [df_fr, df_de, df_es]:
+    df["datetime"] = pd.to_datetime(df["datetime"])

@@ -41,3 +41,27 @@ def analyze_peaks(df, country_name):
 analyze_peaks(df_fr, "France")
 analyze_peaks(df_de, "Germany")
 analyze_peaks(df_es, "Spain")
+
+
+import matplotlib.pyplot as plt
+
+def plot_demand(df, country):
+    plt.figure(figsize=(12,4))
+    plt.plot(df["datetime"], df["demand_mwh"])
+    
+    # Peak
+    peak_idx = df["demand_mwh"].idxmax()
+    plt.scatter(df.loc[peak_idx, "datetime"],
+                df.loc[peak_idx, "demand_mwh"],
+                color="red", label="Peak")
+    
+    plt.title(f"Electricity demand - {country}")
+    plt.xlabel("Time")
+    plt.ylabel("Demand (MWh)")
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+plot_demand(df_fr, "France")
+plot_demand(df_de, "Germany")
+plot_demand(df_es, "Spain")

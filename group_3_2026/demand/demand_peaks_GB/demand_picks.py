@@ -61,8 +61,6 @@ def find_local_maxima(df, value_col="demand_mwh"):
 
 import matplotlib.pyplot as plt
 
-import matplotlib.pyplot as plt
-
 def plot_with_local_maxima(df, country):
     df = df.sort_values("datetime").reset_index(drop=True)
 

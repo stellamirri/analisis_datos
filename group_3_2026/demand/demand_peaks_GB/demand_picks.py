@@ -37,3 +37,7 @@ def analyze_peaks(df, country_name):
     
     return peak_value, peak_time
 
+#Analyzing peaks for each country
+analyze_peaks(df_fr, "France")
+analyze_peaks(df_de, "Germany")
+analyze_peaks(df_es, "Spain")

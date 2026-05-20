@@ -42,26 +42,74 @@ analyze_peaks(df_fr, "France")
 analyze_peaks(df_de, "Germany")
 analyze_peaks(df_es, "Spain")
 
+#adding the local maxima function to find all local peaks in the demand data
+
+def find_local_maxima(df, value_col="demand_mwh"):
+    """
+    detects local maxima in the demand data. A local maximum is defined as a point that is greater than its immediate neighbors.
+    """
+
+    df = df.sort_values("datetime").reset_index(drop=True)
+
+    local_maxima = df[
+        (df[value_col] > df[value_col].shift(1)) &
+        (df[value_col] > df[value_col].shift(-1))
+    ]
+
+    return local_maxima
+
 
 import matplotlib.pyplot as plt
 
-def plot_demand(df, country):
-    plt.figure(figsize=(12,4))
-    plt.plot(df["datetime"], df["demand_mwh"])
-    
-    # Peak
-    peak_idx = df["demand_mwh"].idxmax()
-    plt.scatter(df.loc[peak_idx, "datetime"],
-                df.loc[peak_idx, "demand_mwh"],
-                color="red", label="Peak")
-    
-    plt.title(f"Electricity demand - {country}")
-    plt.xlabel("Time")
+import matplotlib.pyplot as plt
+
+def plot_with_local_maxima(df, country):
+    df = df.sort_values("datetime").reset_index(drop=True)
+
+    # Maximum global
+    global_peak_idx = df["demand_mwh"].idxmax()
+
+    # Maxima locaux
+    local_maxima = find_local_maxima(df)
+
+    plt.figure(figsize=(14, 5))
+
+    # Courbe de demande
+    plt.plot(
+        df["datetime"],
+        df["demand_mwh"],
+        label="Demand",
+        color="blue"
+    )
+
+    # Maxima locaux en vert
+    plt.scatter(
+        local_maxima["datetime"],
+        local_maxima["demand_mwh"],
+        color="green",
+        s=25,
+        label="Local maxima",
+        zorder=4
+    )
+
+    # Maximum global en rouge
+    plt.scatter(
+        df.loc[global_peak_idx, "datetime"],
+        df.loc[global_peak_idx, "demand_mwh"],
+        color="red",
+        s=80,
+        label="Global maximum",
+        zorder=5
+    )
+
+    plt.title(f"Demand peaks - {country}")
+    plt.xlabel("Date")
     plt.ylabel("Demand (MWh)")
     plt.legend()
     plt.tight_layout()
-    plt.show()
 
-plot_demand(df_fr, "France")
-plot_demand(df_de, "Germany")
-plot_demand(df_es, "Spain")
+
+plot_with_local_maxima(df_fr, "France")
+plot_with_local_maxima(df_de, "Germany")
+plot_with_local_maxima(df_es, "Spain")
+plt.show()

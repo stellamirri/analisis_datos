@@ -95,7 +95,7 @@ def descargar_capacidad(pais_origen, pais_destino, nombre_archivo):
         print(f"  ✓ Guardado en {ruta}")
         return df
     except Exception as error:
-        print(f"  ✗ Error descargando NTC {pais_origen}→{pais_destino}: {error}")
+        print(f"  ✗ Error descargando NTC, se intentará descargar intercambios programados: {error}")
         descargar_intercambio_programado(pais_origen, pais_destino, nombre_archivo)
         return None
 

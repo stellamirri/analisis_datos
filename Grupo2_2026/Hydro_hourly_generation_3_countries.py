@@ -39,7 +39,6 @@ data1 = response1.json()
 data2 = response2.json()
 data3 = response3.json()
 
-print(data1)
 
 rows1 = data1["data"]
 rows2 = data2["data"]

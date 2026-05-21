@@ -70,7 +70,7 @@ germany_values = df3["value"]
 bar_width = 0.35
 x = range(len(df1["datetime"]))
 
-plt.figure(figsize=(7, 3))
+plt.figure(figsize=(13, 4))
 plt.bar([i - bar_width/3 for i in x], france_values, width=bar_width/3, label = "France", color = "blue")
 plt.bar([i + bar_width/3 for i in x], spain_values, width=bar_width/3, label = "Spain", color = "orange")
 plt.bar([i for i in x], germany_values, width=bar_width/3, label = "Germany", color = "red")
@@ -92,7 +92,7 @@ plt.figtext(
 )
 
 
-plt.figure(figsize=(7, 3))
+plt.figure(figsize=(13, 4))
 plt.bar([i for i in x], france_values, width=bar_width, label = "France", color = "blue")
 plt.title("Hydroelectricity generation per hour France (01/01/2026)")
 plt.xlabel("Day")
@@ -111,7 +111,7 @@ plt.figtext(
     bbox={"facecolor": "lightgray", "alpha": 0.5, "pad": 5}  
 )
 
-plt.figure(figsize=(7, 3))
+plt.figure(figsize=(13, 4))
 plt.bar([i for i in x], spain_values, width=bar_width, label = "Spain", color = "orange")
 plt.title("Hydroelectricity generation per hour Spain (01/01/2026)")
 plt.xlabel("Day")
@@ -130,7 +130,7 @@ plt.figtext(
     bbox={"facecolor": "lightgray", "alpha": 0.5, "pad": 5}  
 )
 
-plt.figure(figsize=(7, 3))
+plt.figure(figsize=(13, 4))
 plt.bar([i for i in x], germany_values, width=bar_width, label = "Germany", color = "red")
 plt.title("Hydroelectricity generation per hour Germany (01/01/2026)")
 plt.xlabel("Day")

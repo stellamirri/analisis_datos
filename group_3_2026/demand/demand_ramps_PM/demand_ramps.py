@@ -6,4 +6,3 @@ df_fr = pd.read_csv("data\\processed\\france_cleaned.csv")
 df_de = pd.read_csv("data\\processed\\germany_cleaned.csv")
 
 # creating a new column for the date and time
-df_fr["datetime"] = pd.to_datetime(df_fr["date"] + " " + df _fr["time"])

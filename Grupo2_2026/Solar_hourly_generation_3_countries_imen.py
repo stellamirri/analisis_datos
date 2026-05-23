@@ -263,10 +263,10 @@ def main():
     Main execution for Imen's solar generation analysis.
 
     The assignment asks for hourly data over a maximum of 3 months.
-    Here we analyse January, February and March 2025.
+    Here we analyse January, February and March 2026.
     """
-    start_date = datetime(2025, 1, 1, tzinfo=timezone.utc)
-    end_date = datetime(2025, 4, 1, tzinfo=timezone.utc)
+    start_date = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    end_date = datetime(2026, 4, 1, tzinfo=timezone.utc)
 
     solar_df = download_solar_generation(start_date, end_date)
 

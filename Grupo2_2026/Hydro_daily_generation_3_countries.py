@@ -1,3 +1,5 @@
+
+from datetime import datetime, timedelta, timezone
 import requests
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -13,23 +15,24 @@ headers = {
 params1 = {
     "zone": "FR",
     "start": "2026-01-02T00:00:00.000Z",
-    "end": "2026-03-01T00:00:00.000Z",
+    "end": "2026-04-01T00:00:00.000Z",
     "temporalGranularity": "daily"
 }
 
 params2 = {
     "zone": "ES",
     "start": "2026-01-02T00:00:00.000Z",
-    "end": "2026-03-01T00:00:00.000Z",
+    "end": "2026-04-01T00:00:00.000Z",
     "temporalGranularity": "daily"
 }
 
 params3 = {
     "zone": "DE",
     "start": "2026-01-02T00:00:00.000Z",
-    "end": "2026-03-01T00:00:00.000Z",
+    "end": "2026-04-01T00:00:00.000Z",
     "temporalGranularity": "daily"
 }
+
 
 response1 = requests.get(url, headers=headers, params=params1)
 response2 = requests.get(url, headers=headers, params=params2)

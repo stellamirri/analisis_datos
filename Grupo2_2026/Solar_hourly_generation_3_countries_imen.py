@@ -203,6 +203,18 @@ def calculate_total_solar_generation(solar_df):
 
     return total_solar
 
+def identify_highest_average_solar_country(statistics):
+    """
+    Identify the country with the highest average solar generation
+    during the analysed period.
+    """
+    highest_country = statistics["average_solar_generation_mw"].idxmax()
+    highest_value = statistics.loc[
+        highest_country, "average_solar_generation_mw"
+    ]
+
+    return highest_country, highest_value
+
 
 def plot_daily_solar_generation(daily_solar):
     """
@@ -279,6 +291,11 @@ def main():
     statistics = calculate_solar_statistics(solar_df)
     print("\nSolar generation statistics by country:")
     print(statistics)
+
+    highest_country, highest_value = identify_highest_average_solar_country(statistics)
+    print(
+    f"\nCountry with the highest average solar generation: "
+    f"{highest_country} ({highest_value:.2f} MW)")
 
     total_solar = calculate_total_solar_generation(solar_df)
     print("\nTotal solar generation by country:")

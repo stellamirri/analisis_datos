@@ -6,9 +6,9 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-from data_crudo_cor_ren import dfES as Price_ES
-from data_crudo_cor_ren import dfFR as Price_FR
-from data_crudo_cor_ren import dfDE as Price_DE
+from Data_crudo_cor_ren import dfES as Price_ES
+from Data_crudo_cor_ren import dfFR as Price_FR
+from Data_crudo_cor_ren import dfDE as Price_DE
 
 from Hydro_hourly_generation_3_countries import france_values as FR_hydro
 from Hydro_hourly_generation_3_countries import germany_values as DE_hydro
@@ -20,16 +20,14 @@ from Wind_hourly_generation_3_countries import france_values as FR_wind
 from Wind_hourly_generation_3_countries import germany_values as DE_wind
 from Wind_hourly_generation_3_countries import spain_values as ES_wind
 
-from Mix_hourly_generation_3_countries import france_values as FR_mix
-from Mix_hourly_generation_3_countries import germany_values as DE_mix
-from Mix_hourly_generation_3_countries import spain_values as ES_mix
+from Mix_hourly_generation_3_countries import mix_df as mix_generation
 
 data_consolidada = []
 
 paises_data = [
-    {"name": "Spain", "price": Price_ES, "solar": solar_generation['ES'], "wind": ES_wind, "hydro": ES_hydro, "mix": ES_mix},
-    {"name": "France", "price": Price_FR, "solar": solar_generation['FR'], "wind": FR_wind, "hydro": FR_hydro, "mix": FR_mix},
-    {"name": "Germany", "price": Price_DE, "solar": solar_generation['DE'], "wind": DE_wind, "hydro": DE_hydro, "mix": DE_mix}
+    {"name": "Spain", "price": Price_ES, "solar": solar_generation['ES'], "wind": ES_wind, "hydro": ES_hydro, "mix": mix_generation['ES']},
+    {"name": "France", "price": Price_FR, "solar": solar_generation['FR'], "wind": FR_wind, "hydro": FR_hydro, "mix": mix_generation['FR']},
+    {"name": "Germany", "price": Price_DE, "solar": solar_generation['DE'], "wind": DE_wind, "hydro": DE_hydro, "mix": mix_generation['DE']}
 ]
 
 for p in paises_data:

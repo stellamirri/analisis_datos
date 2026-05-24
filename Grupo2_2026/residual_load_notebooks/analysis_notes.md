@@ -1,4 +1,5 @@
 # Residual Load Analysis
+
 country,mean_residual_load,std_residual_load,min_residual_load,max_residual_load,median_residual_load
 Spain,8614.71688670412,5610.88695330792,-2827.34,24380.25,8682.025
 France,31262.87198033708,6260.680114550698,14434.61,50612.2,30913.965000000004

@@ -16,18 +16,16 @@ from Hydro_hourly_generation_3_countries import spain_values as ES_hydro
 
 from Solar_hourly_generation_3_countries_imen import solar_df as solar_generation
 
-from Wind_hourly_generation_3_countries import france_values as FR_wind
-from Wind_hourly_generation_3_countries import germany_values as DE_wind
-from Wind_hourly_generation_3_countries import spain_values as ES_wind
+from wind_analysis import final_df as wind_generation
 
 from Mix_hourly_generation_3_countries import mix_df as mix_generation
 
 data_consolidada = []
 
 paises_data = [
-    {"name": "Spain", "price": Price_ES, "solar": solar_generation['ES'], "wind": ES_wind, "hydro": ES_hydro, "mix": mix_generation['ES']},
-    {"name": "France", "price": Price_FR, "solar": solar_generation['FR'], "wind": FR_wind, "hydro": FR_hydro, "mix": mix_generation['FR']},
-    {"name": "Germany", "price": Price_DE, "solar": solar_generation['DE'], "wind": DE_wind, "hydro": DE_hydro, "mix": mix_generation['DE']}
+    {"name": "Spain", "price": Price_ES, "solar": solar_generation['ES'], "wind": wind_generation['ES'], "hydro": ES_hydro, "mix": mix_generation['ES']},
+    {"name": "France", "price": Price_FR, "solar": solar_generation['FR'], "wind": wind_generation['FR'], "hydro": FR_hydro, "mix": mix_generation['FR']},
+    {"name": "Germany", "price": Price_DE, "solar": solar_generation['DE'], "wind": wind_generation['DE'], "hydro": DE_hydro, "mix": mix_generation['DE']}
 ]
 
 for p in paises_data:

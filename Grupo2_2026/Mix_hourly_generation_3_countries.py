@@ -160,7 +160,9 @@ def download_mix_generation():
         country_dataframes.append(country_df)
 
     mix_df = pd.concat(country_dataframes, ignore_index=True)
-
+    # Eliminamos posibles registros duplicados para asegurar la precisión del análisis
+    mix_df = mix_df.drop_duplicates().reset_index(drop=True)
+    
     mix_df["datetime"] = pd.to_datetime(mix_df["datetime"], errors="coerce")
     mix_df = mix_df.dropna(subset=["datetime"])
 

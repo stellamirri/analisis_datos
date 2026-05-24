@@ -1,3 +1,9 @@
+# =================================================================
+# PROYECTO: Análisis de Datos de Generación Eléctrica 2026
+# GRUPO 2: Generación Renovable (ES, FR, DE)
+# AUTOR: MarcosBello.
+# DESCRIPCIÓN: Extracción horaria de mix energético vía API.
+# =================================================================
 from datetime import datetime, timedelta, timezone
 
 import matplotlib.pyplot as plt

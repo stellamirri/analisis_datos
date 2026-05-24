@@ -51,3 +51,22 @@ for p in paises_data:
 
 df_final = pd.concat(data_consolidada)
 
+fuentes = ['solar', 'wind', 'hydro']
+
+for f in fuentes:
+    plt.figure(figsize=(8, 5))
+    sns.scatterplot(data=df_final, x=f'pct_{f}', y='value', hue='pais', alpha=0.6)
+    plt.title(f'Correlation: Price vs % of renewable {f.capitalize()}')
+    plt.show()
+
+
+plt.figure(figsize=(10, 6))
+sns.scatterplot(data=df_final, x='pct_renovables', y='value', hue='pais')
+plt.title('Price vs % Total Renewables')
+plt.show()
+
+
+plt.figure(figsize=(10, 6))
+sns.regplot(data=df_final, x='pct_renovables', y='value', color='purple')
+plt.title('General Trend: Price vs % Renewables')
+plt.show()

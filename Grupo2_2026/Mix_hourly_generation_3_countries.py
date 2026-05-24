@@ -4,6 +4,7 @@
 # AUTOR: MarcosBello.
 # DESCRIPCIÓN: Extracción horaria de mix energético vía API.
 # =================================================================
+import os
 from datetime import datetime, timedelta, timezone
 
 import matplotlib.pyplot as plt
@@ -12,7 +13,12 @@ import requests
 
 
 # Put here the Electricity Maps API key used by the group
-API_KEY = "patCytbSzwwY9ZZhgner"
+API_KEY = os.getenv("ELECTRICITY_MAPS_API_KEY")
+
+if not API_KEY:
+    raise ValueError(
+        "Missing API key. Please set ELECTRICITY_MAPS_API_KEY as an environment variable."
+    )
 
 # Countries required for Group 2
 COUNTRIES = ["ES", "FR", "DE"]

@@ -1,5 +1,6 @@
 import pandas as pd
 from pathlib import Path
+import ast
 
 base_dir = Path(__file__).resolve().parents[1]
 
@@ -19,18 +20,27 @@ for country in countries:
     load_df["datetime"] = pd.to_datetime(load_df["datetime"])
     mix_df["datetime"] = pd.to_datetime(mix_df["datetime"])
 
+    # Extract solar, wind, hydro from the mix dictionary column
+    mix_df["mix"] = mix_df["mix"].apply(ast.literal_eval)
+
+    mix_df["solar"] = mix_df["mix"].apply(lambda x: x.get("solar", 0))
+    mix_df["wind"] = mix_df["mix"].apply(lambda x: x.get("wind", 0))
+    mix_df["hydro"] = mix_df["mix"].apply(lambda x: x.get("hydro", 0))
+
     merged = pd.merge(
-        load_df,
-        mix_df,
+        load_df[["datetime", "value"]],
+        mix_df[["datetime", "solar", "wind", "hydro"]],
         on="datetime",
         how="inner"
     )
 
+    merged["renewable_generation"] = (
+        merged["solar"] + merged["wind"] + merged["hydro"]
+    )
+
     merged["renewable_share"] = (
-        merged["solar"]
-        + merged["wind"]
-        + merged["hydro"]
-    ) / merged["value"]
+        merged["renewable_generation"] / merged["value"]
+    )
 
     output = processed_dir / f"{country}_renewable_share.csv"
 

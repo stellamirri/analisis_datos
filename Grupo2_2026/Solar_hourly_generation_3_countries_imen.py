@@ -7,7 +7,12 @@ import requests
 
 
 # Electricity Maps API key
-API_KEY = "patCytbSzwwY9ZZhgner"
+API_KEY = os.getenv("ELECTRICITY_MAPS_API_KEY")
+
+if not API_KEY:
+    raise ValueError(
+        "Missing API key. Please set ELECTRICITY_MAPS_API_KEY as an environment variable."
+    )
 
 # Countries required for the assignment:
 # Spain = ES, France = FR, Germany = DE

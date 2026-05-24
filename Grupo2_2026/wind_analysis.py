@@ -120,8 +120,6 @@ final_df = pd.concat(all_dfs, ignore_index=True)
 final_df.sort_values(["country", "datetime"], inplace=True)
 
 final_df["hour"] = final_df["datetime"].dt.hour
-final_df["weekday"] = final_df["datetime"].dt.day_name()
-final_df["is_weekend"] = final_df["datetime"].dt.weekday >= 5
 final_df["month"] = final_df["datetime"].dt.to_period("M")
 
 # DISPLAY OPTIONS
@@ -189,16 +187,8 @@ for country in final_df["country_name"].unique():
     peak_hour = profile.idxmax()
     print(f"  {country}: {peak_hour:02d}:00 ({profile[peak_hour]:,.1f} MW avg)")
  
-# Weekend vs Weekday
-print("\n\nWeekday vs Weekend Average Wind Generation (MW):\n")
-wk = final_df.groupby(["country_name", "is_weekend"])["wind_mw"].mean().round(1)
-wk = wk.rename(index={False: "Weekday", True: "Weekend"}, level="is_weekend")
-print(wk.to_string())
- 
- 
-# =========================================================
+
 # TOP & BOTTOM WIND HOURS
-# =========================================================
  
 print("\n" + "=" * 50)
 print("TOP 10 WIND GENERATION HOURS")
@@ -408,5 +398,175 @@ fig4.text(0.5, -0.01, "Source: Electricity Maps API", ha="center", fontsize=8, c
 fig4.tight_layout()
 # fig4.savefig("Grupo2_2026/plots/wind_variation.png", dpi=150, bbox_inches="tight")
 # print("\nFigure 4 saved as: wind_variation.png")
+
+
+# Figure 5: Average Wind by Hour of Day — all countries overlaid
+fig5, ax5 = plt.subplots(figsize=(12, 5))
+fig5.suptitle("Figure 5 — Average Wind Generation by Hour of Day (MW)", fontsize=14, fontweight="bold")
+
+for country in countries:
+    profile = (
+        final_df[final_df["country"] == country]
+        .groupby("hour")["wind_mw"]
+        .mean()
+    )
+    ax5.plot(
+        profile.index, profile.values,
+        color=colors.get(country, "grey"), linewidth=2.5,
+        marker="o", markersize=4,
+        label=country_labels.get(country, country)
+    )
+    ax5.fill_between(profile.index, profile.values, alpha=0.08, color=colors.get(country, "grey"))
+
+ax5.set_xlabel("Hour of Day")
+ax5.set_ylabel("Avg Wind Generation (MW)")
+ax5.set_xticks(range(0, 24, 3))
+ax5.set_xticklabels([f"{h:02d}:00" for h in range(0, 24, 3)], rotation=30, ha="right")
+ax5.legend(fontsize=10)
+ax5.grid(True, linestyle="--", alpha=0.4)
+ax5.yaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f"{x:,.0f}"))
+
+fig5.text(0.5, -0.01, "Source: Electricity Maps API", ha="center", fontsize=8, color="grey")
+fig5.tight_layout()
+# fig5.savefig("Grupo2_2026/plots/wind_hourly_profile.png", dpi=150, bbox_inches="tight")
+# print("\nFigure 5 saved as: wind_hourly_profile.png")
+
+
+# =========================================================
+# CONSECUTIVE LOW-WIND HOURS ("WIND DROUGHT")
+# =========================================================
+
+print("\n" + "=" * 50)
+print("CONSECUTIVE LOW-WIND HOURS — WIND DROUGHT ANALYSIS")
+print("=" * 50)
+print("\nLow-wind threshold: < 10% of each country's mean wind generation.")
+print("Shows grid stability risk: how long can wind stay critically low?\n")
+
+for country in final_df["country_name"].unique():
+    subset = (
+        final_df[final_df["country_name"] == country]
+        .sort_values("datetime")["wind_mw"]
+        .reset_index(drop=True)
+    )
+    threshold = subset.mean() * 0.10
+    is_low = subset < threshold
+
+    # Find consecutive low-wind streaks
+    max_streak = 0
+    current_streak = 0
+    streaks = []
+    for val in is_low:
+        if val:
+            current_streak += 1
+            max_streak = max(max_streak, current_streak)
+        else:
+            if current_streak > 0:
+                streaks.append(current_streak)
+            current_streak = 0
+    if current_streak > 0:
+        streaks.append(current_streak)
+
+    avg_streak = pd.Series(streaks).mean() if streaks else 0
+    n_droughts = len(streaks)
+    pct_low = is_low.sum() / len(is_low) * 100
+
+    print(f"  {country}:")
+    print(f"    Threshold:            < {threshold:,.0f} MW")
+    print(f"    % of hours below:       {pct_low:.1f}%")
+    print(f"    Number of droughts:     {n_droughts}")
+    print(f"    Longest drought:        {max_streak} hours ({max_streak/24:.1f} days)")
+    print(f"    Avg drought length:     {avg_streak:.1f} hours\n")
+
+# Figure 6: Wind drought duration distribution
+fig6, axes6 = plt.subplots(1, len(countries), figsize=(5 * len(countries), 5), sharey=False)
+fig6.suptitle("Figure 6 — Wind Drought Duration Distribution (hours below 10% of mean)",
+              fontsize=14, fontweight="bold")
+
+for ax, country in zip(axes6, countries):
+    country_name = country_labels.get(country, country)
+    subset = (
+        final_df[final_df["country"] == country]
+        .sort_values("datetime")["wind_mw"]
+        .reset_index(drop=True)
+    )
+    threshold = subset.mean() * 0.10
+    is_low = subset < threshold
+
+    streaks = []
+    current_streak = 0
+    for val in is_low:
+        if val:
+            current_streak += 1
+        else:
+            if current_streak > 0:
+                streaks.append(current_streak)
+            current_streak = 0
+    if current_streak > 0:
+        streaks.append(current_streak)
+
+    if streaks:
+        ax.hist(streaks, bins=15, color=colors.get(country, "grey"),
+                alpha=0.85, edgecolor="white")
+        ax.axvline(pd.Series(streaks).mean(), color="black", linewidth=1.5,
+                   linestyle="--", label=f"Avg: {pd.Series(streaks).mean():.1f}h")
+        ax.legend(fontsize=9)
+    else:
+        ax.text(0.5, 0.5, "No droughts", ha="center", va="center", transform=ax.transAxes)
+
+    ax.set_title(country_name, fontsize=12, fontweight="bold")
+    ax.set_xlabel("Drought Length (hours)")
+    ax.set_ylabel("Frequency")
+    ax.grid(True, axis="y", linestyle="--", alpha=0.4)
+
+fig6.text(0.5, -0.01, "Source: Electricity Maps API", ha="center", fontsize=8, color="grey")
+fig6.tight_layout()
+# fig6.savefig("Grupo2_2026/plots/wind_drought.png", dpi=150, bbox_inches="tight")
+# print("\nFigure 6 saved as: wind_drought.png")
+
+# =========================================================
+# CORRELATION BETWEEN COUNTRIES
+# =========================================================
+
+print("\n" + "=" * 50)
+print("WIND GENERATION CORRELATION BETWEEN COUNTRIES")
+print("=" * 50)
+print("\nShows whether wind generation is geographically diversified.\n")
+
+# Pivot so each country is a column, datetime is the index
+corr_pivot = final_df.pivot_table(index="datetime", columns="country_name", values="wind_mw")
+corr_matrix = corr_pivot.corr(method="pearson").round(3)
+
+print("Pearson Correlation Matrix:\n")
+print(corr_matrix.to_string())
+print("\nInterpretation: values close to 1 = wind moves together, close to 0 = independent")
+
+# Figure 7: Correlation Heatmap
+fig7, ax7 = plt.subplots(figsize=(7, 5))
+fig7.suptitle("Figure 7 — Wind Generation Correlation Between Countries (Pearson)",
+              fontsize=14, fontweight="bold")
+
+country_name_list = corr_matrix.columns.tolist()
+n = len(country_name_list)
+im = ax7.imshow(corr_matrix.values, cmap="Blues", vmin=0, vmax=1)
+
+# Cell labels
+for i in range(n):
+    for j in range(n):
+        val = corr_matrix.values[i, j]
+        ax7.text(j, i, f"{val:.3f}",
+                 ha="center", va="center",
+                 fontsize=13, fontweight="bold",
+                 color="white" if val > 0.6 else "black")
+
+ax7.set_xticks(range(n))
+ax7.set_yticks(range(n))
+ax7.set_xticklabels(country_name_list, fontsize=11)
+ax7.set_yticklabels(country_name_list, fontsize=11)
+plt.colorbar(im, ax=ax7, fraction=0.046, pad=0.04, label="Pearson r")
+
+fig7.text(0.5, -0.01, "Source: Electricity Maps API", ha="center", fontsize=8, color="grey")
+fig7.tight_layout()
+# fig7.savefig("Grupo2_2026/plots/wind_correlation.png", dpi=150, bbox_inches="tight")
+# print("\nFigure 7 saved as: wind_correlation.png")
 
 plt.show()

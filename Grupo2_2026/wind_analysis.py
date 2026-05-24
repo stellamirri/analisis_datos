@@ -4,18 +4,20 @@ from pandas import json_normalize
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.ticker as ticker
+import os
 import warnings
 
 
 warnings.filterwarnings("ignore")
 
 
+# Electricity Maps API key
+API_KEY = os.getenv("ELECTRICITY_MAPS_API_KEY")
 
-# =========================================================
-# API KEY
-# =========================================================
-
-API_KEY = "patCytbSzwwY9ZZhgner"
+if not API_KEY:
+    raise ValueError(
+        "Missing API key. Please set ELECTRICITY_MAPS_API_KEY as an environment variable."
+    )
 
 
 # =========================================================
@@ -62,71 +64,80 @@ COUNTRY_NAMES = {
 
 # LOAD API DATA — 7-day chunks per country (API range limit)
  
-all_dfs = []
+def obtener_datos(): # get dataframe for later usage
+
+    all_dfs = []
  
-for base_params in params_list:
-    zone = base_params["zone"]
-    print(f"\nLoading data for {zone} ({COUNTRY_NAMES[zone]})...")
+    for base_params in params_list:
+        zone = base_params["zone"]
+        print(f"\nLoading data for {zone} ({COUNTRY_NAMES[zone]})...")
  
-    start = pd.Timestamp(base_params["start"])
-    end   = pd.Timestamp(base_params["end"])
-    zone_records = []
-    current = start
+        start = pd.Timestamp(base_params["start"])
+        end   = pd.Timestamp(base_params["end"])
+        zone_records = []
+        current = start
  
-    while current < end:
-        chunk_end = min(current + pd.Timedelta(days=7), end)
-        params = {
-            "zone":                zone,
-            "start":               current.strftime("%Y-%m-%dT%H:%M:%S.000Z"),
-            "end":                 chunk_end.strftime("%Y-%m-%dT%H:%M:%S.000Z"),
-            "temporalGranularity": "hourly"
-        }
-        print(f"  Fetching {params['start'][:10]} → {params['end'][:10]}...", end=" ", flush=True)
-        response = requests.get(url, headers=headers, params=params, timeout=30)
-        response.raise_for_status()
-        records = response.json().get("data", [])
-        print(f"✓ {len(records)} records")
-        zone_records.extend(records)
+        while current < end:
+            chunk_end = min(current + pd.Timedelta(days=7), end)
+            params = {
+                "zone":                zone,
+                "start":               current.strftime("%Y-%m-%dT%H:%M:%S.000Z"),
+                "end":                 chunk_end.strftime("%Y-%m-%dT%H:%M:%S.000Z"),
+                "temporalGranularity": "hourly"
+            }
+            print(f"  Fetching {params['start'][:10]} → {params['end'][:10]}...", end=" ", flush=True)
+            response = requests.get(url, headers=headers, params=params, timeout=30)
+            response.raise_for_status()
+            records = response.json().get("data", [])
+            print(f"✓ {len(records)} records")
+            zone_records.extend(records)
  
-        current = chunk_end
+            current = chunk_end
  
-    df = json_normalize(zone_records)
-    print(f"  Total: {len(df)} hourly records for {COUNTRY_NAMES[zone]}.")
+        df = json_normalize(zone_records)
+        print(f"  Total: {len(df)} hourly records for {COUNTRY_NAMES[zone]}.")
  
-    # Add country identifier
-    df["country"] = zone
-    df["country_name"] = COUNTRY_NAMES[zone]
+        # Add country identifier
+        df["country"] = zone
+        df["country_name"] = COUNTRY_NAMES[zone]
  
-    # Parse datetime
-    df["datetime"] = pd.to_datetime(df["datetime"])
+        # Parse datetime
+        df["datetime"] = pd.to_datetime(df["datetime"])
 
 
-    # FIX: Select only columns that actually exist in the df
-    wind_df = df[["datetime", "country", "country_name"] + 
-                 [c for c in df.columns if c not in ["datetime", "country", "country_name"]]].copy()
+        # FIX: Select only columns that actually exist in the df
+        wind_df = df[["datetime", "country", "country_name"] + 
+                    [c for c in df.columns if c not in ["datetime", "country", "country_name"]]].copy()
 
-    # Rename the main value column to wind_mw and convert MW → keep as MW
-    wind_df.rename(columns={"value": "wind_mw"}, inplace=True)
-    wind_df["wind_mw"] = pd.to_numeric(wind_df["wind_mw"], errors="coerce")
+        # Rename the main value column to wind_mw and convert MW → keep as MW
+        wind_df.rename(columns={"value": "wind_mw"}, inplace=True)
+        wind_df["wind_mw"] = pd.to_numeric(wind_df["wind_mw"], errors="coerce")
 
-    wind_df = wind_df.dropna(subset=["wind_mw"])
+        wind_df = wind_df.dropna(subset=["wind_mw"])
 
-    print(f"  {len(wind_df)} data points loaded.")
-    all_dfs.append(wind_df)
+        print(f"  {len(wind_df)} data points loaded.")
+        all_dfs.append(wind_df)
 
-# MERGE ALL COUNTRIES
 
-final_df = pd.concat(all_dfs, ignore_index=True)
-final_df.sort_values(["country", "datetime"], inplace=True)
 
-final_df["hour"] = final_df["datetime"].dt.hour
-final_df["month"] = final_df["datetime"].dt.to_period("M")
+    # MERGE ALL COUNTRIES
 
-# DISPLAY OPTIONS
+    final_df = pd.concat(all_dfs, ignore_index=True)
+    final_df.sort_values(["country", "datetime"], inplace=True)
 
-pd.set_option("display.max_columns", None)
-pd.set_option("display.width", 200)
-pd.set_option("display.float_format", "{:,.1f}".format)
+    final_df["hour"] = final_df["datetime"].dt.hour
+    final_df["month"] = final_df["datetime"].dt.to_period("M")
+
+    # DISPLAY OPTIONS
+
+    pd.set_option("display.max_columns", None)
+    pd.set_option("display.width", 200)
+    pd.set_option("display.float_format", "{:,.1f}".format)
+
+    return final_df
+
+if __name__ == "__main__":
+    final_df = obtener_datos()
 
 # DATAFRAME OVERVIEW
 

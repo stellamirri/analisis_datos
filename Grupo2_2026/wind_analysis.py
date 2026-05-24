@@ -297,5 +297,78 @@ if "month" in final_df.columns:
     #fig2.savefig("Grupo2_2026/plots/wind_monthly_comparison.png", dpi=150, bbox_inches="tight")
     #print("Figure 2 saved as: wind_monthly_comparison.png")
      
-     
+
+# Figure 3: Wind Share of Total Production (subplots)
+
+if "wind_share_pct" in final_df.columns:
+    fig3, axes3 = plt.subplots(len(countries), 1, figsize=(16, 4 * len(countries)), sharex=True)
+    fig3.suptitle("Figure 3 — Wind Share of Total Production (%) per Country", fontsize=14, fontweight="bold", y=1.01)
+ 
+    for ax, country in zip(axes3, countries):
+        subset = final_df[final_df["country"] == country].sort_values("datetime")
+        ax.fill_between(
+            subset["datetime"], subset["wind_share_pct"],
+            alpha=0.25, color=colors.get(country, "grey")
+        )
+        ax.plot(
+            subset["datetime"], subset["wind_share_pct"],
+            color=colors.get(country, "grey"), linewidth=2.0
+        )
+        ax.set_title(country_labels.get(country, country), fontsize=12, fontweight="bold")
+        ax.set_ylabel("Wind Share (%)")
+        ax.set_ylim(0, 100)
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %d"))
+        ax.xaxis.set_major_locator(mdates.WeekdayLocator(interval=2))
+        plt.setp(ax.xaxis.get_majorticklabels(), rotation=30, ha="right")
+        ax.grid(True, linestyle="--", alpha=0.4)
+        ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f"{x:.0f}%"))
+ 
+    fig3.tight_layout()
+#    fig3.savefig("Grupo2_2026/plots/wind_share.png", dpi=150, bbox_inches="tight")
+#    print("Figure 3 saved as: wind_share.png")
+
+ 
+# Figure 4: Wind Distribution Boxplot (all countries side by side)
+
+fig4, ax4 = plt.subplots(figsize=(10, 6))
+fig4.suptitle("Figure 4 — Wind Generation Distribution by Country (MW)", fontsize=14, fontweight="bold")
+ 
+data_for_box = [
+    pd.to_numeric(final_df[final_df["country"] == c]["wind_mw"], errors="coerce").dropna().values
+    for c in countries
+]
+bp = ax4.boxplot(
+    data_for_box,
+    labels=[country_labels.get(c, c) for c in countries],
+    patch_artist=True,
+    medianprops=dict(color="black", linewidth=1.5, linestyle= "--" ),
+    whiskerprops=dict(linewidth=1.5),
+    capprops=dict(linewidth=1.5),
+    flierprops=dict(marker="o", markersize=4, alpha=0.5)
+)
+for patch, country in zip(bp["boxes"], countries):
+    patch.set_facecolor(colors.get(country, "grey"))
+    patch.set_alpha(0.75)
+
+# Add median value labels on the right end of each median line
+for i, (median_line, data) in enumerate(zip(bp["medians"], data_for_box)):
+    median_val = median_line.get_ydata()[1]
+    x_right = median_line.get_xdata()[1]  # rightmost x point of the median line
+    ax4.text(
+        x_right + 0.05, median_val,
+        f"{median_val:,.0f} MW",
+        ha="left", va="center",
+        fontsize=10, fontweight="bold", color="black",
+        bbox=dict(boxstyle="round,pad=0.2", facecolor="white", edgecolor="none", alpha=0.7)
+    )
+ 
+ax4.set_ylabel("Wind Generation (MW)")
+ax4.grid(True, axis="y", linestyle="--", alpha=0.4)
+ax4.yaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f"{x:,.0f}"))
+ 
+fig4.tight_layout()
+# fig4.savefig("Grupo2_2026/plots/boxplot.png", dpi=150, bbox_inches="tight")
+# print("Figure 4 saved as: boxplot.png")
+
+
 plt.show()

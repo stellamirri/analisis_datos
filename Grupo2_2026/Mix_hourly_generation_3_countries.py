@@ -162,7 +162,7 @@ def download_mix_generation():
     mix_df = pd.concat(country_dataframes, ignore_index=True)
     # Eliminamos posibles registros duplicados para asegurar la precisión del análisis
     mix_df = mix_df.drop_duplicates().reset_index(drop=True)
-    
+
     mix_df["datetime"] = pd.to_datetime(mix_df["datetime"], errors="coerce")
     mix_df = mix_df.dropna(subset=["datetime"])
 
@@ -251,6 +251,8 @@ def plot_renewable_share(daily_mix):
     plt.xlabel("Date")
     plt.ylabel("Renewable share (%)")
     plt.xticks(rotation=45)
+    # Añadimos una rejilla para facilitar la lectura de los porcentajes
+    plt.grid(True, linestyle='--', alpha=0.6)
     plt.legend()
     plt.tight_layout()
     plt.show()

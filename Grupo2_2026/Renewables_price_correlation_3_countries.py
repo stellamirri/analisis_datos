@@ -32,3 +32,22 @@ paises_data = [
     {"name": "Germany", "price": Price_DE, "solar": solar_generation['DE'], "wind": DE_wind, "hydro": DE_hydro, "mix": DE_mix}
 ]
 
+for p in paises_data:
+    
+    df = pd.merge(p['price'], p['solar'], on='datetime')
+    df = pd.merge(df, p['wind'], on='datetime')
+    df = pd.merge(df, p['hydro'], on='datetime')
+    df = pd.merge(df, p['mix'], on='datetime')
+    
+    
+    df['pct_solar'] = (df['solar'] / df['mix']) * 100
+    df['pct_wind'] = (df['wind'] / df['mix']) * 100
+    df['pct_hydro'] = (df['hydro'] / df['mix']) * 100
+    df['pct_renovables'] = df['pct_solar'] + df['pct_wind'] + df['pct_hydro']
+    df['pais'] = p['nombre']
+    
+    data_consolidada.append(df)
+
+
+df_final = pd.concat(data_consolidada)
+

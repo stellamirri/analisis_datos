@@ -1,6 +1,9 @@
 import requests
 import pandas as pd
 from pandas import json_normalize
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+import matplotlib.ticker as ticker
 
 
 # =========================================================
@@ -201,3 +204,98 @@ if len(production_cols) > 1:
     wind_share = final_df.groupby("country_name")["wind_share_pct"].mean().round(2)
     print("\n\nAverage Wind Share of Total Production (%):\n")
     print(wind_share.to_string())
+
+    # VISUALIZATION settings
+
+colors = {"FR": "#2563EB", "ES": "#DC2626", "DE": "#16A34A"}
+country_labels = {"FR": "France", "ES": "Spain", "DE": "Germany"}
+countries = final_df["country"].unique()
+
+# Figure 1: Daily Wind Generation per Country
+
+fig1, axes1 = plt.subplots(len(countries), 1, figsize=(12, 4 * len(countries)), sharex=True)
+fig1.suptitle("Figure 1 — Daily Wind Generation per Country (MW)", fontsize=14, fontweight="bold", y=1.01)
+ 
+for ax, country in zip(axes1, countries):
+    subset = final_df[final_df["country"] == country].copy().sort_values("datetime")
+    ax.plot(
+        subset["datetime"], subset["wind_mw"],
+        color=colors.get(country, "grey"), linewidth=2.0, alpha=0.9,
+        label="Daily"
+    )
+    # 7-day rolling mean
+    rolling = subset.set_index("datetime")["wind_mw"].rolling("7D").mean()
+    ax.plot(
+        rolling.index, rolling.values,
+        color=colors.get(country, "grey"), linewidth=1.5,
+        linestyle="--", alpha=0.6, label="7-Day Avg"
+    )
+    ax.set_title(country_labels.get(country, country), fontsize=12, fontweight="bold")
+    ax.set_ylabel("Wind (MW)")
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %d"))
+    ax.xaxis.set_major_locator(mdates.WeekdayLocator(interval=2))
+    plt.setp(ax.xaxis.get_majorticklabels(), rotation=30, ha="right")
+    ax.legend(fontsize=9)
+    ax.grid(True, linestyle="--", alpha=0.4)
+    ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f"{x:,.0f}"))
+ 
+fig1.tight_layout()
+#fig1.savefig("Grupo2_2026/plots/wind_daily.png", dpi=150, bbox_inches="tight")
+#print("\nFigure 1 saved as: wind_daily.png")
+
+
+# Figure 2: Monthly Average Wind Generation 
+
+if "month" in final_df.columns:
+    monthly_pivot = (
+        final_df.groupby(["month", "country"])["wind_mw"]
+        .mean()
+        .unstack("country")
+    )
+    month_list = list(monthly_pivot.index)
+    n_months = len(month_list)
+    country_list = list(monthly_pivot.columns)
+    x = list(range(len(country_list)))
+    width = 0.55
+ 
+    fig2, axes2 = plt.subplots(1, n_months, figsize=(5 * n_months, 6), sharey=True)
+    if n_months == 1:
+        axes2 = [axes2]
+    fig2.suptitle("Figure 2 — Monthly Wind Generation Comparison by Country (MW)", fontsize=14, fontweight="bold", y=1.02)
+ 
+    for ax, month in zip(axes2, month_list):
+        values = [monthly_pivot.loc[month, c] if c in monthly_pivot.columns else 0 for c in country_list]
+        bar_colors = [colors.get(c, "grey") for c in country_list]
+        bars = ax.bar(x, values, width=width, color=bar_colors, alpha=0.85, edgecolor="white")
+ 
+        # Value labels on top of each bar
+        for bar, val in zip(bars, values):
+            if pd.notna(val):
+                ax.text(
+                    bar.get_x() + bar.get_width() / 2,
+                    bar.get_height() + max(v for v in values if pd.notna(v)) * 0.01,
+                    f"{val:,.0f}",
+                    ha="center", va="bottom", fontsize=9, fontweight="bold"
+                )
+ 
+        ax.set_title(str(month), fontsize=12, fontweight="bold")
+        ax.set_xticks(x)
+        ax.set_xticklabels([country_labels.get(c, c) for c in country_list], fontsize=10)
+        ax.grid(True, axis="y", linestyle="--", alpha=0.4)
+        ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda v, _: f"{v:,.0f}"))
+        if ax == axes2[0]:
+            ax.set_ylabel("Avg Wind Generation (MW)")
+ 
+    # Shared legend
+    handles = [plt.Rectangle((0, 0), 1, 1, color=colors.get(c, "grey"), alpha=0.85)
+               for c in country_list]
+    fig2.legend(handles, [country_labels.get(c, c) for c in country_list],
+                loc="lower center", ncol=len(country_list), fontsize=10,
+                bbox_to_anchor=(0.5, -0.06), frameon=False)
+ 
+    fig2.tight_layout()
+    #fig2.savefig("Grupo2_2026/plots/wind_monthly_comparison.png", dpi=150, bbox_inches="tight")
+    #print("Figure 2 saved as: wind_monthly_comparison.png")
+     
+     
+plt.show()

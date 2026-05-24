@@ -146,10 +146,11 @@ def download_solar_generation(start_date, end_date):
         country_df = fetch_solar_data_for_country(country, start_date, end_date)
         country_dataframes.append(country_df)
 
-    solar_df = pd.concat(country_dataframes, ignore_index=True)
+        solar_df = pd.concat(country_dataframes, ignore_index=True)
+        solar_df = solar_df.drop_duplicates().reset_index(drop=True)
 
-    solar_df["datetime"] = pd.to_datetime(solar_df["datetime"], errors="coerce")
-    solar_df["solar_generation_mw"] = pd.to_numeric(
+        solar_df["datetime"] = pd.to_datetime(solar_df["datetime"], errors="coerce")
+        solar_df["solar_generation_mw"] = pd.to_numeric(
         solar_df["solar_generation_mw"], errors="coerce"
     )
 

@@ -3,74 +3,46 @@
 
 import pandas as pd
 import requests
+from datetime import datetime, timedelta
 
+def get_precio_data():
+    API_KEY = "patCytbSzwwY9ZZhgner"
+    url = "https://api.electricitymaps.com/v3/price-day-ahead/past-range"
+    headers = {"auth-token": API_KEY}
+    paises = ["ES", "FR", "DE"]
+    lista_dfs = []
 
-API_KEY = "patCytbSzwwY9ZZhgner"
+    start_date = datetime(2026, 1, 2)
+    end_total = datetime(2026, 4, 1)
 
-url = "https://api.electricitymaps.com/v3/price-day-ahead/past-range"
+    for zona in paises:
+        current_start = start_date
+        while current_start < end_total:
+            
+            current_end = min(current_start + timedelta(days=9), end_total)
+            
+            params = {
+                "zone": zona,
+                "start": current_start.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "end": current_end.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "temporalGranularity": "hourly"
+            }
+            
+            print(f"Descargando {zona} del {current_start.date()} al {current_end.date()}")
+            response = requests.get(url, headers=headers, params=params)
+            
+            if response.status_code == 200:
+                data = response.json()
+                data_list = data.get("history", data.get("data", []))
+                if data_list:
+                    df = pd.json_normalize(data_list)
+                    df["datetime"] = pd.to_datetime(df["datetime"])
+                    df = df.rename(columns={"value": "price_mwh"})
+                    df["country"] = zona
+                    lista_dfs.append(df[["datetime", "country", "price_mwh"]])
+            else:
+                print(f"Error en {zona}: {response.text}")
+                
+            current_start = current_end
 
-headers = {
-"auth-token": API_KEY
-}
-
-paramsES = {
-    "zone": "ES",
-    "start": "2026-01-02T00:00:00.000Z",
-    "end": "2026-04-01T00:00:00.000Z",
-    "temporalGranularity": "hourly"
-}
-
-paramsFR = {
-    "zone": "FR",
-    "start": "2026-01-02T00:00:00.000Z",
-    "end": "2026-04-01T00:00:00.000Z",
-    "temporalGranularity": "hourly"
-}
-
-paramsDE = {
-    "zone": "DE",
-    "start": "2026-01-02T00:00:00.000Z",
-    "end": "2026-04-01T00:00:00.000Z",
-    "temporalGranularity": "hourly "
-}
-
-responseES = requests.get(url, headers=headers, params=paramsES)
-responseFR = requests.get(url, headers=headers, params=paramsFR)
-responseDE = requests.get(url, headers=headers, params=paramsDE)
-
-dataFR = responseFR.json()
-dataES = responseES.json()
-dataDE = responseDE.json()
-
-rowsFR = dataFR["data"]
-rowsES = dataES["data"]
-rowsDE = dataDE["data"]
-
-dfFR = pd.json_normalize(rowsFR)
-dfES = pd.json_normalize(rowsES)
-dfDE = pd.json_normalize(rowsDE)
-
-dfFR = dfFR[["datetime", "value"]]
-dfES = dfES[["datetime", "value"]]
-dfDE = dfDE[["datetime", "value"]]
-
-
-dfFR["datetime"] = pd.to_datetime(dfFR["datetime"])
-dfFR["day"] = dfFR["datetime"].dt.day
-dfFR["value"] = dfFR["value"]/1000
-
-dfES["datetime"] = pd.to_datetime(dfES["datetime"])
-dfES["day"] = dfES["datetime"].dt.day
-dfES["value"] = dfES["value"]/1000
-
-dfDE["datetime"] = pd.to_datetime(dfDE["datetime"])
-dfDE["day"] = dfDE["datetime"].dt.day
-dfDE["value"] = dfDE["value"]/1000
-
-FRANCE_Price = dfFR["value"]
-SPAIN_Price = dfES["value"]
-GERMANY_Price = dfDE["value"]
-
-dfES = dfES.rename(columns={"value": "precio_es"})
-dfFR = dfFR.rename(columns={"value": "precio_fr"})
-dfDE = dfDE.rename(columns={"value": "precio_de"})
+    return pd.concat(lista_dfs, ignore_index=True)

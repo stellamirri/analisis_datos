@@ -1,7 +1,6 @@
 import requests
 import pandas as pd
 from datetime import datetime, timedelta
-from pathlib import Path
 
 API_KEY = "gHCKjHZ6f2AvhZKfCqg7"
 
@@ -11,27 +10,22 @@ countries = {
     "Germany": "DE"
 }
 
-# 改这里
 url = "https://api.electricitymaps.com/v4/electricity-mix/past-range"
 
 headers = {
     "auth-token": API_KEY
 }
 
-start_date = datetime(2026, 2, 23)
-end_date = datetime(2026, 5, 23)
+start_date = datetime(2026, 1, 1)
+end_date = datetime(2026, 4, 1)
 
 step = timedelta(days=10)
 
-base_dir = Path(__file__).resolve().parents[1]
-
-output_dir = base_dir / "residual_load_data" / "processed"
-output_dir.mkdir(parents=True, exist_ok=True)
+mix_data = {}
 
 for country, zone in countries.items():
 
     all_data = []
-
     current_start = start_date
 
     while current_start < end_date:
@@ -53,11 +47,14 @@ for country, zone in countries.items():
 
         data = response.json()
 
-        # DEBUG
-        print(data)
+        if isinstance(data, list):
+            all_data.extend(data)
 
-        if isinstance(data, dict) and "data" in data:
+        elif isinstance(data, dict) and "data" in data:
             all_data.extend(data["data"])
+
+        elif isinstance(data, dict) and "history" in data:
+            all_data.extend(data["history"])
 
         else:
             print("Unexpected response:", data)
@@ -68,12 +65,12 @@ for country, zone in countries.items():
 
     df = pd.DataFrame(all_data)
 
-    print("Rows:", len(df))
+    mix_data[country] = df
 
-    filename = output_dir / f"{country}_3months_mix.csv"
+    print(f"{country} rows:", len(df))
 
-    print("Saving to:", filename)
+spain_mix = mix_data["Spain"]
+france_mix = mix_data["France"]
+germany_mix = mix_data["Germany"]
 
-    df.to_csv(filename, index=False)
-
-    print(f"{country} mix saved!")
+print(spain_mix.head())

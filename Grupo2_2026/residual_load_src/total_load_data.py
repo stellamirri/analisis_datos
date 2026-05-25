@@ -1,7 +1,6 @@
 import requests
 import pandas as pd
 from datetime import datetime, timedelta
-from pathlib import Path
 
 API_KEY = "gHCKjHZ6f2AvhZKfCqg7"
 
@@ -17,20 +16,21 @@ headers = {
     "auth-token": API_KEY
 }
 
-start_date = datetime(2026, 2, 23)
-end_date = datetime(2026, 5, 23)
+start_date = datetime(2026, 1, 1)
+end_date = datetime(2026, 4, 1)
 
 step = timedelta(days=10)
 
-base_dir = Path(__file__).resolve().parents[1]
-output_dir = base_dir / "residual_load_data" / "raw"
-output_dir.mkdir(parents=True, exist_ok=True)
+# 用字典直接保存 DataFrame
+country_data = {}
 
 for country, zone in countries.items():
+
     all_data = []
     current_start = start_date
 
     while current_start < end_date:
+
         current_end = min(current_start + step, end_date)
 
         params = {
@@ -50,10 +50,13 @@ for country, zone in countries.items():
 
         if isinstance(data, list):
             all_data.extend(data)
+
         elif isinstance(data, dict) and "data" in data:
             all_data.extend(data["data"])
+
         elif isinstance(data, dict) and "history" in data:
             all_data.extend(data["history"])
+
         else:
             print("Unexpected data:", data)
 
@@ -61,13 +64,17 @@ for country, zone in countries.items():
 
         current_start = current_end
 
+    # 直接转 DataFrame
     df = pd.DataFrame(all_data)
 
-    filename = output_dir / f"{country}_3months_load.csv"
+    # 保存到字典
+    country_data[country] = df
 
-    print("Rows:", len(df))
-    print("Saving to:", filename)
+    print(f"{country} rows:", len(df))
 
-    df.to_csv(filename, index=False)
+# 后续直接引用
+spain_df = country_data["Spain"]
+france_df = country_data["France"]
+germany_df = country_data["Germany"]
 
-    print(f"{country} saved!")
+print(spain_df.head())

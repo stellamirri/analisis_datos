@@ -1,27 +1,77 @@
+import requests
 import pandas as pd
-from pathlib import Path
-import ast
+from datetime import datetime, timedelta
 
-base_dir = Path(__file__).resolve().parents[1]
+API_KEY = "gHCKjHZ6f2AvhZKfCqg7"
 
-countries = ["Spain", "France", "Germany"]
+countries = {
+    "Spain": "ES",
+    "France": "FR",
+    "Germany": "DE"
+}
 
-processed_dir = base_dir / "residual_load_data" / "processed"
-raw_dir = base_dir / "residual_load_data" / "raw"
+headers = {
+    "auth-token": API_KEY
+}
 
-for country in countries:
+start_date = datetime(2026, 1, 1)
+end_date = datetime(2026, 4, 1)
+step = timedelta(days=10)
 
-    load_file = raw_dir / f"{country}_3months_load.csv"
-    mix_file = processed_dir / f"{country}_3months_mix.csv"
+load_url = "https://api.electricitymaps.com/v4/total-load/past-range"
+mix_url = "https://api.electricitymaps.com/v4/electricity-mix/past-range"
 
-    load_df = pd.read_csv(load_file)
-    mix_df = pd.read_csv(mix_file)
+
+def fetch_data(url, zone):
+    all_data = []
+    current_start = start_date
+
+    while current_start < end_date:
+        current_end = min(current_start + step, end_date)
+
+        params = {
+            "zone": zone,
+            "start": current_start.strftime("%Y-%m-%dT00:00:00Z"),
+            "end": current_end.strftime("%Y-%m-%dT00:00:00Z")
+        }
+
+        response = requests.get(
+            url,
+            headers=headers,
+            params=params,
+            timeout=30
+        )
+
+        data = response.json()
+
+        if isinstance(data, list):
+            all_data.extend(data)
+
+        elif isinstance(data, dict) and "data" in data:
+            all_data.extend(data["data"])
+
+        elif isinstance(data, dict) and "history" in data:
+            all_data.extend(data["history"])
+
+        else:
+            print("Unexpected response:", data)
+
+        current_start = current_end
+
+    return pd.DataFrame(all_data)
+
+
+renewable_share_data = {}
+
+for country, zone in countries.items():
+
+    print(f"\nDownloading data for {country}...")
+
+    load_df = fetch_data(load_url, zone)
+    mix_df = fetch_data(mix_url, zone)
 
     load_df["datetime"] = pd.to_datetime(load_df["datetime"])
     mix_df["datetime"] = pd.to_datetime(mix_df["datetime"])
-
-    # Extract solar, wind, hydro from the mix dictionary column
-    mix_df["mix"] = mix_df["mix"].apply(ast.literal_eval)
 
     mix_df["solar"] = mix_df["mix"].apply(lambda x: x.get("solar", 0))
     mix_df["wind"] = mix_df["mix"].apply(lambda x: x.get("wind", 0))
@@ -34,16 +84,28 @@ for country in countries:
         how="inner"
     )
 
+    merged = merged.rename(columns={
+        "value": "total_load"
+    })
+
     merged["renewable_generation"] = (
-        merged["solar"] + merged["wind"] + merged["hydro"]
+        merged["solar"] +
+        merged["wind"] +
+        merged["hydro"]
     )
 
     merged["renewable_share"] = (
-        merged["renewable_generation"] / merged["value"]
+        merged["renewable_generation"] / merged["total_load"]
     )
 
-    output = processed_dir / f"{country}_renewable_share.csv"
+    renewable_share_data[country] = merged
 
-    merged.to_csv(output, index=False)
+    print(f"{country} rows:", len(merged))
+    print(merged.head())
 
-    print(country, "renewable share saved!")
+
+spain_renewable_share = renewable_share_data["Spain"]
+france_renewable_share = renewable_share_data["France"]
+germany_renewable_share = renewable_share_data["Germany"]
+
+print("\nRenewable share calculation finished.")

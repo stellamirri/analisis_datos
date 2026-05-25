@@ -1,39 +1,92 @@
+import requests
 import pandas as pd
-from pathlib import Path
+from datetime import datetime, timedelta
 
-countries = ["Spain", "France", "Germany"]
+API_KEY = "gHCKjHZ6f2AvhZKfCqg7"
 
-base_dir = Path(__file__).resolve().parents[1]
+countries = {
+    "Spain": "ES",
+    "France": "FR",
+    "Germany": "DE"
+}
 
-raw_dir = base_dir / "residual_load_data" / "raw"
-processed_dir = base_dir / "residual_load_data" / "processed"
+headers = {"auth-token": API_KEY}
 
-for country in countries:
-    load_file = raw_dir / f"{country}_3months_load.csv"
-    mix_file = processed_dir / f"{country}_3months_mix.csv"
+start_date = datetime(2026, 1, 1)
+end_date = datetime(2026, 4, 1)
+step = timedelta(days=10)
 
-    load = pd.read_csv(load_file)
-    mix = pd.read_csv(mix_file)
+load_url = "https://api.electricitymaps.com/v4/total-load/past-range"
+mix_url = "https://api.electricitymaps.com/v4/electricity-mix/past-range"
 
-    load["datetime"] = pd.to_datetime(load["datetime"])
-    mix["datetime"] = pd.to_datetime(mix["datetime"])
 
-    mix["solar"] = mix["mix"].apply(lambda x: eval(x).get("solar", 0))
-    mix["wind"] = mix["mix"].apply(lambda x: eval(x).get("wind", 0))
-    mix["hydro"] = mix["mix"].apply(lambda x: eval(x).get("hydro", 0))
+def fetch_data(url, zone):
+    all_data = []
+    current_start = start_date
 
-    df = pd.merge(
-        load[["datetime", "value"]],
-        mix[["datetime", "solar", "wind", "hydro"]],
+    while current_start < end_date:
+        current_end = min(current_start + step, end_date)
+
+        params = {
+            "zone": zone,
+            "start": current_start.strftime("%Y-%m-%dT00:00:00Z"),
+            "end": current_end.strftime("%Y-%m-%dT00:00:00Z")
+        }
+
+        response = requests.get(url, headers=headers, params=params, timeout=30)
+        data = response.json()
+
+        if isinstance(data, list):
+            all_data.extend(data)
+        elif isinstance(data, dict) and "data" in data:
+            all_data.extend(data["data"])
+        elif isinstance(data, dict) and "history" in data:
+            all_data.extend(data["history"])
+        else:
+            print("Unexpected response:", data)
+
+        current_start = current_end
+
+    return pd.DataFrame(all_data)
+
+
+residual_load_data = {}
+
+for country, zone in countries.items():
+
+    print(f"\nDownloading data for {country}...")
+
+    load_df = fetch_data(load_url, zone)
+    mix_df = fetch_data(mix_url, zone)
+
+    load_df["datetime"] = pd.to_datetime(load_df["datetime"])
+    mix_df["datetime"] = pd.to_datetime(mix_df["datetime"])
+
+    mix_df["solar"] = mix_df["mix"].apply(lambda x: x.get("solar", 0))
+    mix_df["wind"] = mix_df["mix"].apply(lambda x: x.get("wind", 0))
+    mix_df["hydro"] = mix_df["mix"].apply(lambda x: x.get("hydro", 0))
+
+    merged = pd.merge(
+        load_df[["datetime", "value"]],
+        mix_df[["datetime", "solar", "wind", "hydro"]],
         on="datetime",
         how="inner"
     )
 
-    df["renewable_generation"] = df["solar"] + df["wind"] + df["hydro"]
-    df["residual_load"] = df["value"] - df["renewable_generation"]
+    merged = merged.rename(columns={"value": "total_load"})
 
-    output_file = processed_dir / f"{country}_residual_load.csv"
+    merged["renewable_generation"] = (
+        merged["solar"] + merged["wind"] + merged["hydro"]
+    )
 
-    df.to_csv(output_file, index=False)
+    merged["residual_load"] = (
+        merged["total_load"] - merged["renewable_generation"]
+    )
 
-    print(f"{country} residual load saved!")
+    residual_load_data[country] = merged
+
+    print(f"{country} rows:", len(merged))
+    print(merged.head())
+
+
+print("\nResidual load calculation finished.")

@@ -3,66 +3,81 @@
 # We will use the data obtained by our group and perform statistical analysis to find patterns and insights.
 
 import pandas as pd
-import seaborn as sns
 import matplotlib.pyplot as plt
+import seaborn as sns
 
-from Data_crudo_cor_ren import dfES as Price_ES
-from Data_crudo_cor_ren import dfFR as Price_FR
-from Data_crudo_cor_ren import dfDE as Price_DE
+from Mix_hourly_generation_3_countries import download_mix_generation, add_mix_indicators
+from Data_crudo_cor_ren import get_precio_data
 
-from Hydro_hourly_generation_3_countries import france_values as FR_hydro
-from Hydro_hourly_generation_3_countries import germany_values as DE_hydro
-from Hydro_hourly_generation_3_countries import spain_values as ES_hydro
-
-from Solar_hourly_generation_3_countries_imen import solar_df as solar_generation
-
-from wind_analysis import final_df as wind_generation
-
-from Mix_hourly_generation_3_countries import mix_df as mix_generation
-
-data_consolidada = []
-
-paises_data = [
-    {"name": "Spain", "price": Price_ES, "solar": solar_generation['ES'], "wind": wind_generation['ES'], "hydro": ES_hydro, "mix": mix_generation['ES']},
-    {"name": "France", "price": Price_FR, "solar": solar_generation['FR'], "wind": wind_generation['FR'], "hydro": FR_hydro, "mix": mix_generation['FR']},
-    {"name": "Germany", "price": Price_DE, "solar": solar_generation['DE'], "wind": wind_generation['DE'], "hydro": DE_hydro, "mix": mix_generation['DE']}
-]
-
-for p in paises_data:
+def run_pipeline():
     
-    df = pd.merge(p['price'], p['solar'], on='datetime')
-    df = pd.merge(df, p['wind'], on='datetime')
-    df = pd.merge(df, p['hydro'], on='datetime')
-    df = pd.merge(df, p['mix'], on='datetime')
+    print("--- Obtaining MIX data ---")
+    mix_df = download_mix_generation()
+    mix_df = add_mix_indicators(mix_df)
     
+    print("--- Obtaining PRICE data ---")
+    precio_df = get_precio_data()
     
-    df['pct_solar'] = (df['solar'] / df['mix']) * 100
-    df['pct_wind'] = (df['wind'] / df['mix']) * 100
-    df['pct_hydro'] = (df['hydro'] / df['mix']) * 100
-    df['pct_renovables'] = df['pct_solar'] + df['pct_wind'] + df['pct_hydro']
-    df['pais'] = p['nombre']
+
+    print("--- Merging datasets ---")
+    df_final = pd.merge(mix_df, precio_df, on=['datetime', 'country'], how='inner')
     
-    data_consolidada.append(df)
+    return df_final
 
-
-df_final = pd.concat(data_consolidada)
-
-fuentes = ['solar', 'wind', 'hydro']
-
-for f in fuentes:
-    plt.figure(figsize=(8, 5))
-    sns.scatterplot(data=df_final, x=f'pct_{f}', y='value', hue='pais', alpha=0.6)
-    plt.title(f'Correlation: Price vs % of renewable {f.capitalize()}')
+def visualizar_datos(df):
+    
+    df['date'] = df['datetime'].dt.date
+    df_diario = df.groupby(['date', 'country'])[['price_mwh', 'renewable_share_percent']].mean().reset_index()
+        
+    sns.set_theme(style="whitegrid")
+    
+    plt.figure(figsize=(14, 6))
+    sns.barplot(data=df_diario, x='date', y='price_mwh', hue='country')
+    
+    plt.title("Precio Promedio Diario por País (€/MWh)", fontsize=15)
+    plt.ylabel("Precio (€/MWh)")
+    plt.xlabel("Fecha")
+    plt.xticks(rotation=45)
+    plt.tight_layout()
     plt.show()
 
+def visualizar_correlacion_renovables(df):
+    plt.figure(figsize=(10, 6))
+    
+    sns.scatterplot(
+        data=df, 
+        x='renewable_share_percent', 
+        y='price_mwh', 
+        hue='country', 
+        alpha=0.6
+    )
+    
+    sns.regplot(data=df, x='renewable_share_percent', y='price_mwh', 
+                scatter=False, color='black', label='Tendencia Global')
+    
+    plt.title("Correlation between % Renewables and Electricity Price")
+    plt.xlabel("% of Renewables in the Mix")
+    plt.ylabel("Price (€/MWh)")
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.7)
+    plt.tight_layout()
+    plt.show()
 
-plt.figure(figsize=(10, 6))
-sns.scatterplot(data=df_final, x='pct_renovables', y='value', hue='pais')
-plt.title('Price vs % Total Renewables')
-plt.show()
+if __name__ == "__main__":
 
+    df_maestro = run_pipeline()
+    
+    print("\n--- Analysis Completed ---")
+    print(f"Total of merged records: {len(df_maestro)}")
+    
+    print("\n--- Correlation between Renovables and Price by Country ---")
 
-plt.figure(figsize=(10, 6))
-sns.regplot(data=df_final, x='pct_renovables', y='value', color='purple')
-plt.title('General Trend: Price vs % Renewables')
-plt.show()
+    correlacion = df_maestro.groupby('country')[['renewable_share_percent', 'price_mwh']].corr().iloc[0::2, -1]
+    print(correlacion)
+    
+    print("\nFirst rows of the master dataset:")
+    print(df_maestro.head())
+    
+    visualizar_datos(df_maestro)
+    visualizar_correlacion_renovables(df_maestro)
+    
